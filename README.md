@@ -93,9 +93,9 @@ On session exit, tools should ask: "Log this session before exiting?"
 
 | Tool | Status | Notes |
 |------|--------|-------|
-| OpenCode | Supported | Reads AGENTS.md |
-| Claude Code | Supported | Reads AGENTS.md |
-| Cursor | Supported | Reads AGENTS.md |
+| OpenCode | ✅ Supported | Reads AGENTS.md; loads `~/.claude/skills/` (global skill) |
+| Claude Code | ✅ Supported | Reads AGENTS.md; loads `~/.claude/skills/` (global skill) |
+| Cursor | ✅ Supported | Reads AGENTS.md |
 | Other tools | Easy to add | Just read AGENTS.md and follow convention |
 
 ## Files
@@ -103,15 +103,34 @@ On session exit, tools should ask: "Log this session before exiting?"
 ```
 llm-logging-convention/
 ├── README.md           # This file
-├── AGENTS.md.example   # Copy to your project root as AGENTS.md
+├── AGENTS.md.example   # Copy to your project root as AGENTS.md (per-project)
+├── SKILL.md            # Global skill for ~/.claude/skills/llm-log/ (all projects)
 └── log.jsonl.example   # Example log entries
 ```
 
 ## Installation
 
+### Option 1: Per-Project (Recommended)
+
 1. Copy `AGENTS.md.example` to your project root as `AGENTS.md`
 2. Customize the "Project Context" section for your project
 3. Create `.llm/` directory (tools will create `log.jsonl` on first run)
+
+### Option 2: Global Skill (All Projects)
+
+Install the `/llm-log` skill globally so it's available across all projects without modifying each `AGENTS.md`:
+
+```bash
+mkdir -p ~/.claude/skills/llm-log
+# Copy SKILL.md from this repo to ~/.claude/skills/llm-log/SKILL.md
+```
+
+**Benefits**:
+- Works across all projects automatically
+- Loaded on-demand (efficient - only loads schema when you invoke `/llm-log`)
+- Compatible with both OpenCode and Claude Code (both read `~/.claude/skills/`)
+
+**Trade-off**: Does NOT auto-log on session exit. You must invoke `/llm-log` manually.
 
 ## Why JSONL?
 
