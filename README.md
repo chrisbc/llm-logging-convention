@@ -36,6 +36,8 @@ your-project/
 ```json
 {
   "timestamp": "2025-02-22T10:30:00Z",
+  "project_name": "NutBot CityLimit",
+  "project_root": "nutbot-citylimit",
   "model": "claude-3-5-sonnet",
   "tool": "claude-code",
   "duration_min": 25,
@@ -55,6 +57,8 @@ your-project/
 | Field | Required | Description |
 |-------|----------|-------------|
 | `timestamp` | Yes | Session start time (ISO 8601, UTC) |
+| `project_name` | Yes | Human-readable project name |
+| `project_root` | Yes | Root folder name (for aggregation across projects) |
 | `model` | Yes | Model identifier |
 | `tool` | Yes | Tool name (claude-code, opencode, cursor, etc.) |
 | `duration_min` | Yes | Session duration in minutes |
@@ -120,8 +124,8 @@ llm-logging-convention/
 ## Example Log
 
 ```json
-{"timestamp":"2025-02-22T10:30:00Z","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":"decided to use RoboClaw over RC ESC"}
-{"timestamp":"2025-02-22T14:00:00Z","model":"claude-3-5-sonnet","tool":"claude-code","duration_min":45,"tokens_in":25000,"tokens_out":12000,"commits":["a1b2c3d"],"files":{"read":["README.md","tractor/MOTOR_CONTROLLER.md"],"created":["tractor/ROS2_SETUP.md"],"modified":["README.md"]},"summary":"Document ROS2 installation and Linorobot2 setup","user_notes":"next: test on hardware"}
+{"timestamp":"2025-02-22T10:30:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":"decided to use RoboClaw over RC ESC"}
+{"timestamp":"2025-02-22T14:00:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"claude-code","duration_min":45,"tokens_in":25000,"tokens_out":12000,"commits":["a1b2c3d"],"files":{"read":["README.md","tractor/MOTOR_CONTROLLER.md"],"created":["tractor/ROS2_SETUP.md"],"modified":["README.md"]},"summary":"Document ROS2 installation and Linorobot2 setup","user_notes":"next: test on hardware"}
 ```
 
 ## Future Enhancements

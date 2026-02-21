@@ -11,6 +11,8 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 ```json
 {
   "timestamp": "2025-02-22T10:30:00Z",
+  "project_name": "NutBot CityLimit",
+  "project_root": "nutbot-citylimit",
   "model": "claude-3-5-sonnet",
   "tool": "claude-code | opencode | cursor | other",
   "duration_min": 25,
@@ -32,6 +34,8 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `timestamp` | ISO 8601 string | Yes | Session start time (UTC) |
+| `project_name` | string | Yes | Human-readable project name |
+| `project_root` | string | Yes | Root folder name (for aggregation) |
 | `model` | string | Yes | Model identifier |
 | `tool` | string | Yes | Tool name (claude-code, opencode, cursor, etc.) |
 | `duration_min` | number | Yes | Approximate session duration in minutes |
@@ -110,7 +114,7 @@ The `user_notes` field captures:
 ### Example Log Entry
 
 ```json
-{"timestamp":"2025-02-22T10:30:00Z","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md","IMPLEMENT_NUT_COLLECTOR.md","FIELD_OBSERVATIONS.md","DESIGN_VISUALS.md"],"created":["README.md","tractor/MOTOR_CONTROLLER.md","tractor/SENSORS_AND_COMPUTE.md","tractor/RC_ESC_ANALYSIS.md","tractor/OEM_CONTROLLER_ANALYSIS.md"],"modified":[]},"summary":"Add project README, motor controller research, sensors/compute docs, ROS2 references","user_notes":""}
+{"timestamp":"2025-02-22T10:30:00Z","project_name":"Your Project Name","project_root":"your-project-root","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":""}
 ```
 
 ## Project Context
