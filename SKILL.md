@@ -1,6 +1,6 @@
 ---
-name: llm-log
-description: Log this LLM session to .llm/log.jsonl. ONLY use when user explicitly asks to log the session with /log or /llm-log.
+name: log
+description: Log this LLM session to .llm/log.jsonl. ONLY use when user explicitly asks to log the session with /log.
 argument-hint: [notes]
 ---
 
@@ -62,22 +62,29 @@ Append a log entry to `.llm/log.jsonl` at the end of each session.
 
 ## /log Workflow
 
-When user invokes `/log` or `/llm-log`:
+When user invokes `/log`:
 
-1. **If no notes provided**: Ask "Add any notes for this log entry? (press Enter to skip)"
+1. **Check for session file**: Read `.llm/.session` if it exists:
+   - Use `start` as `session_start` (precise, user-provided)
+   - Use `topic` as a seed for writing the `summary`
+   - Calculate `duration_min` from `start` to now (precise when session file exists)
 
-2. **Gather session data**:
+2. **If no notes provided**: Ask "Add any notes for this log entry? (press Enter to skip)"
+
+3. **Gather session data**:
    - Run `git log --oneline -10` to find commits made this session
+   - If session file exists with `start`, use `git log --oneline --since="<start>"` for more accurate commit filtering
    - Track files read, created, modified during conversation
-   - Calculate duration from first user message to now
    - Note token usage if available
 
-3. **Append entry** to `.llm/log.jsonl` in project root:
+4. **Append entry** to `.llm/log.jsonl` in project root:
    - Create directory if missing
    - Append one valid JSON object per line
    - Never modify existing entries
 
-4. **Confirm**: "Logged session to .llm/log.jsonl"
+5. **Clean up**: Delete `.llm/.session` after successful log entry
+
+6. **Confirm**: "Logged session to .llm/log.jsonl"
 
 ## Implementation Notes
 
@@ -85,6 +92,7 @@ When user invokes `/log` or `/llm-log`:
 - **Append only**: Never modify existing log entries
 - **Create if missing**: If `.llm/log.jsonl` doesn't exist, create it with the first entry
 - **User notes from arguments**: If user typed `/log some notes`, use "some notes" as `user_notes`
+- **Session file**: If `.llm/.session` exists, `session_start` and `duration_min` become precise rather than estimated
 
 ## Arguments
 

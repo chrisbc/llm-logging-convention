@@ -77,8 +77,9 @@ your-project/
 
 Not all fields are equally reliable. LLM agents typically don't have direct access to their own session metadata (start time, token counts, etc.), so some values are best-effort estimates.
 
-- **Precise**: `timestamp` (log creation time), `model`, `tool`, `commits`, `files`, `summary`
-- **Estimated**: `session_start` (inferred from first commit or heuristic), `duration_min` (approximate), `tokens_in`/`tokens_out` (only if the tool exposes usage data)
+- **Always precise**: `timestamp` (log creation time), `model`, `tool`, `commits`, `files`, `summary`
+- **Precise if `/log-start` was used**: `session_start`, `duration_min`
+- **Estimated otherwise**: `session_start` (inferred from first commit or heuristic), `duration_min` (approximate), `tokens_in`/`tokens_out` (only if the tool exposes usage data)
 
 Consumers of log data should treat estimated fields as indicative, not exact.
 
@@ -87,9 +88,13 @@ Consumers of log data should treat estimated fields as indicative, not exact.
 ### For Users
 
 ```
+/log-start                     # Mark session start (records timestamp)
+/log-start updating ROS2 deps  # Mark start with a topic
 /log                           # Log session, prompts for notes
 /log decided to use RoboClaw   # Log with notes
 ```
+
+Using `/log-start` at the beginning of a session makes `session_start` and `duration_min` precise instead of estimated.
 
 On session exit, tools should ask: "Log this session before exiting?"
 
@@ -113,10 +118,11 @@ On session exit, tools should ask: "Log this session before exiting?"
 
 ```
 llm-logging-convention/
-├── README.md           # This file
-├── AGENTS.md.example   # Copy to your project root as AGENTS.md (per-project)
-├── SKILL.md            # Global skill for ~/.claude/skills/llm-log/ (all projects)
-└── log.jsonl.example   # Example log entries
+├── README.md              # This file
+├── AGENTS.md.example      # Copy to your project root as AGENTS.md (per-project)
+├── SKILL.md               # /log skill for ~/.claude/skills/log/
+├── SKILL-log-start.md     # /log-start skill for ~/.claude/skills/log-start/
+└── log.jsonl.example      # Example log entries
 ```
 
 ## Installation
@@ -129,19 +135,30 @@ llm-logging-convention/
 
 ### Option 2: Global Skill (All Projects)
 
-Install the `/llm-log` skill globally so it's available across all projects without modifying each `AGENTS.md`:
+Install the skills globally so they're available across all projects without modifying each `AGENTS.md`:
 
 ```bash
-mkdir -p ~/.claude/skills/llm-log
-# Copy SKILL.md from this repo to ~/.claude/skills/llm-log/SKILL.md
+mkdir -p ~/.claude/skills/log ~/.claude/skills/log-start
+# Copy SKILL.md to ~/.claude/skills/log/SKILL.md
+# Copy SKILL-log-start.md to ~/.claude/skills/log-start/SKILL.md
 ```
 
 **Benefits**:
 - Works across all projects automatically
-- Loaded on-demand (efficient - only loads schema when you invoke `/llm-log`)
+- Loaded on-demand (efficient - only loads schema when you invoke `/log`)
 - Compatible with both OpenCode and Claude Code (both read `~/.claude/skills/`)
 
-**Trade-off**: Does NOT auto-log on session exit. You must invoke `/llm-log` manually.
+**Trade-off**: Does NOT auto-log on session exit. You must invoke `/log` manually.
+
+## Gitignore
+
+Add `.llm/.session` to your `.gitignore` — it's a transient file that shouldn't be committed:
+
+```
+.llm/.session
+```
+
+The log file (`.llm/log.jsonl`) _should_ be committed — that's the whole point.
 
 ## Why JSONL?
 
