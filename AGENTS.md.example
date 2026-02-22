@@ -11,6 +11,7 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 ```json
 {
   "timestamp": "2025-02-22T10:30:00Z",
+  "session_start": "2025-02-22T09:15:00Z",
   "project_name": "NutBot CityLimit",
   "project_root": "nutbot-citylimit",
   "model": "claude-3-5-sonnet",
@@ -33,12 +34,13 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `timestamp` | ISO 8601 string | Yes | Session start time (UTC) |
+| `timestamp` | ISO 8601 string | Yes | When the log entry was created (UTC) |
+| `session_start` | ISO 8601 string | No | When the session began (UTC, estimated from first commit or heuristic) |
 | `project_name` | string | Yes | Human-readable project name |
 | `project_root` | string | Yes | Root folder name (for aggregation) |
 | `model` | string | Yes | Model identifier |
 | `tool` | string | Yes | Tool name (claude-code, opencode, cursor, etc.) |
-| `duration_min` | number | Yes | Approximate session duration in minutes |
+| `duration_min` | number | No | Approximate session duration in minutes |
 | `tokens_in` | number | No | Input tokens used |
 | `tokens_out` | number | No | Output tokens generated |
 | `commits` | string[] | No | Git commit hashes made during session |
@@ -48,6 +50,13 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 | `files.modified` | string[] | No | Existing files modified |
 | `summary` | string | Yes | Brief description of session work |
 | `user_notes` | string | No | Optional user-provided notes |
+
+### Data Accuracy
+
+Not all fields are equally reliable. LLM agents typically don't have direct access to their own session metadata, so some values are best-effort estimates:
+
+- **Precise**: `timestamp`, `model`, `tool`, `commits`, `files`, `summary`
+- **Estimated**: `session_start`, `duration_min`, `tokens_in`/`tokens_out`
 
 ### Implementation Notes
 
@@ -114,7 +123,7 @@ The `user_notes` field captures:
 ### Example Log Entry
 
 ```json
-{"timestamp":"2025-02-22T10:30:00Z","project_name":"Your Project Name","project_root":"your-project-root","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":""}
+{"timestamp":"2025-02-22T10:30:00Z","session_start":"2025-02-22T09:15:00Z","project_name":"Your Project Name","project_root":"your-project-root","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":""}
 ```
 
 ## Project Context

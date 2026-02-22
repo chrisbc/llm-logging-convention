@@ -13,6 +13,7 @@ Append a log entry to `.llm/log.jsonl` at the end of each session.
 ```json
 {
   "timestamp": "2025-02-22T10:30:00Z",
+  "session_start": "2025-02-22T09:15:00Z",
   "project_name": "Human-readable name",
   "project_root": "folder-name",
   "model": "claude-3-5-sonnet",
@@ -35,23 +36,29 @@ Append a log entry to `.llm/log.jsonl` at the end of each session.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `timestamp` | string | Session start time (ISO 8601, UTC) |
+| `timestamp` | string | When the log entry was created (ISO 8601, UTC) |
 | `project_name` | string | Human-readable project name |
 | `project_root` | string | Root folder name (for aggregation) |
 | `model` | string | Model identifier |
 | `tool` | string | Tool name (claude-code, opencode, cursor, etc.) |
-| `duration_min` | number | Approximate session duration in minutes |
 | `summary` | string | Brief description of session work |
 
 ### Optional Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `session_start` | string | When the session began (ISO 8601, UTC, estimated) |
+| `duration_min` | number | Approximate session duration in minutes |
 | `tokens_in` | number | Input tokens used |
 | `tokens_out` | number | Output tokens generated |
 | `commits` | string[] | Git commit hashes made during session |
 | `files` | object | File operations: `read`, `created`, `modified` arrays |
 | `user_notes` | string | User-provided notes |
+
+### Data Accuracy
+
+- **Precise**: `timestamp`, `model`, `tool`, `commits`, `files`, `summary`
+- **Estimated**: `session_start`, `duration_min`, `tokens_in`/`tokens_out` — agents typically lack direct access to their own session metadata
 
 ## /log Workflow
 

@@ -36,6 +36,7 @@ your-project/
 ```json
 {
   "timestamp": "2025-02-22T10:30:00Z",
+  "session_start": "2025-02-22T09:15:00Z",
   "project_name": "NutBot CityLimit",
   "project_root": "nutbot-citylimit",
   "model": "claude-3-5-sonnet",
@@ -56,12 +57,13 @@ your-project/
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `timestamp` | Yes | Session start time (ISO 8601, UTC) |
+| `timestamp` | Yes | When the log entry was created (ISO 8601, UTC) |
+| `session_start` | No | When the session began (ISO 8601, UTC) |
 | `project_name` | Yes | Human-readable project name |
 | `project_root` | Yes | Root folder name (for aggregation across projects) |
 | `model` | Yes | Model identifier |
 | `tool` | Yes | Tool name (claude-code, opencode, cursor, etc.) |
-| `duration_min` | Yes | Session duration in minutes |
+| `duration_min` | No | Approximate session duration in minutes |
 | `tokens_in` | No | Input tokens |
 | `tokens_out` | No | Output tokens |
 | `commits` | No | Git commit hashes from this session |
@@ -70,6 +72,15 @@ your-project/
 | `files.modified` | No | Existing files modified |
 | `summary` | Yes | Brief work description |
 | `user_notes` | No | User-provided context |
+
+### Data Accuracy
+
+Not all fields are equally reliable. LLM agents typically don't have direct access to their own session metadata (start time, token counts, etc.), so some values are best-effort estimates.
+
+- **Precise**: `timestamp` (log creation time), `model`, `tool`, `commits`, `files`, `summary`
+- **Estimated**: `session_start` (inferred from first commit or heuristic), `duration_min` (approximate), `tokens_in`/`tokens_out` (only if the tool exposes usage data)
+
+Consumers of log data should treat estimated fields as indicative, not exact.
 
 ## Usage
 
@@ -143,8 +154,8 @@ mkdir -p ~/.claude/skills/llm-log
 ## Example Log
 
 ```json
-{"timestamp":"2025-02-22T10:30:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":"decided to use RoboClaw over RC ESC"}
-{"timestamp":"2025-02-22T14:00:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"claude-code","duration_min":45,"tokens_in":25000,"tokens_out":12000,"commits":["a1b2c3d"],"files":{"read":["README.md","tractor/MOTOR_CONTROLLER.md"],"created":["tractor/ROS2_SETUP.md"],"modified":["README.md"]},"summary":"Document ROS2 installation and Linorobot2 setup","user_notes":"next: test on hardware"}
+{"timestamp":"2025-02-22T10:30:00Z","session_start":"2025-02-22T09:15:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"opencode","duration_min":25,"tokens_in":15000,"tokens_out":8000,"commits":["e263c5e"],"files":{"read":["PLAN.md","TRACTOR.md"],"created":["README.md"],"modified":[]},"summary":"Add project README and initial docs","user_notes":"decided to use RoboClaw over RC ESC"}
+{"timestamp":"2025-02-22T14:00:00Z","project_name":"NutBot CityLimit","project_root":"nutbot-citylimit","model":"claude-3-5-sonnet","tool":"claude-code","duration_min":45,"commits":["a1b2c3d"],"files":{"read":["README.md","tractor/MOTOR_CONTROLLER.md"],"created":["tractor/ROS2_SETUP.md"],"modified":["README.md"]},"summary":"Document ROS2 installation and Linorobot2 setup","user_notes":"next: test on hardware"}
 ```
 
 ## Future Enhancements
