@@ -62,8 +62,9 @@ Not all fields are equally reliable. LLM agents typically don't have direct acce
 
 - **Append only**: Each session adds one line, never modify existing entries
 - **JSONL format**: One valid JSON object per line (no trailing commas, no array wrapper)
+- **Always use Bash `>>`**: LLM tools' Write and Edit commands overwrite file contents. Always use `printf '%s\n' '{...}' >> .llm/log.jsonl` via Bash to append
 - **File path**: Always `.llm/log.jsonl` in project root
-- **Create if missing**: If `.llm/log.jsonl` doesn't exist, create it with the first entry
+- **Create if missing**: `mkdir -p .llm` before appending if the directory doesn't exist
 
 ## /log-start Command
 
@@ -109,7 +110,12 @@ When user invokes `/log`:
    - Track files read, created, modified during conversation
    - Note token usage if available
 
-4. **Append entry** to `.llm/log.jsonl`
+4. **Append entry** to `.llm/log.jsonl`:
+   - Create `.llm/` directory if missing: `mkdir -p .llm`
+   - **Use Bash with `>>` to append** — do NOT use Write or Edit tools (they overwrite the file):
+     ```bash
+     printf '%s\n' '{"timestamp":"...","project_name":"..."}' >> .llm/log.jsonl
+     ```
 
 5. **Confirm**: "Logged session to .llm/log.jsonl"
 

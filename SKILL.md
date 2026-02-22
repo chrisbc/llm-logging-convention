@@ -78,8 +78,11 @@ When user invokes `/log`:
    - Note token usage if available
 
 4. **Append entry** to `.llm/log.jsonl` in project root:
-   - Create directory if missing
-   - Append one valid JSON object per line
+   - Create `.llm/` directory if missing: `mkdir -p .llm`
+   - **Use Bash with `>>` to append** — do NOT use Write or Edit tools (they overwrite the file):
+     ```bash
+     printf '%s\n' '{"timestamp":"...","project_name":"..."}' >> .llm/log.jsonl
+     ```
    - Never modify existing entries
 
 5. **Confirm**: "Logged session to .llm/log.jsonl"
@@ -88,7 +91,8 @@ When user invokes `/log`:
 
 - **JSONL format**: One JSON object per line, no trailing commas, no array wrapper
 - **Append only**: Never modify existing log entries
-- **Create if missing**: If `.llm/log.jsonl` doesn't exist, create it with the first entry
+- **Always use Bash `>>`**: LLM tools' Write and Edit commands overwrite file contents. Always use `printf '%s\n' '{...}' >> .llm/log.jsonl` via Bash to append
+- **Create if missing**: `mkdir -p .llm` before appending if the directory doesn't exist
 - **User notes from arguments**: If user typed `/log some notes`, use "some notes" as `user_notes`
 - **Session file**: If `.llm/.session` exists, `session_start` and `duration_min` become precise rather than estimated
 - **No cleanup**: `/log` does not delete `.llm/.session` — it persists until the next `/log-start` overwrites it. This allows multiple `/log` calls per session.

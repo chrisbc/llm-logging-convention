@@ -139,13 +139,15 @@ Install the skills globally so they're available across all projects without mod
 
 ```bash
 mkdir -p ~/.claude/skills/log ~/.claude/skills/log-start
-# Copy SKILL.md to ~/.claude/skills/log/SKILL.md
-# Copy SKILL-log-start.md to ~/.claude/skills/log-start/SKILL.md
+cp SKILL.md ~/.claude/skills/log/SKILL.md
+cp SKILL-log-start.md ~/.claude/skills/log-start/SKILL.md
 ```
+
+**Critical**: The file must be named `SKILL.md` inside a directory named after the skill (e.g. `log/SKILL.md`). The directory name becomes the `/slash-command`. Both Claude Code and OpenCode discover skills from `~/.claude/skills/`.
 
 **Benefits**:
 - Works across all projects automatically
-- Loaded on-demand (efficient - only loads schema when you invoke `/log`)
+- Loaded on-demand (efficient — only loads schema when you invoke `/log`)
 - Compatible with both OpenCode and Claude Code (both read `~/.claude/skills/`)
 
 **Trade-off**: Does NOT auto-log on session exit. You must invoke `/log` manually.
