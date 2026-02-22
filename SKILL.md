@@ -82,9 +82,7 @@ When user invokes `/log`:
    - Append one valid JSON object per line
    - Never modify existing entries
 
-5. **Clean up**: Delete `.llm/.session` after successful log entry
-
-6. **Confirm**: "Logged session to .llm/log.jsonl"
+5. **Confirm**: "Logged session to .llm/log.jsonl"
 
 ## Implementation Notes
 
@@ -93,6 +91,7 @@ When user invokes `/log`:
 - **Create if missing**: If `.llm/log.jsonl` doesn't exist, create it with the first entry
 - **User notes from arguments**: If user typed `/log some notes`, use "some notes" as `user_notes`
 - **Session file**: If `.llm/.session` exists, `session_start` and `duration_min` become precise rather than estimated
+- **No cleanup**: `/log` does not delete `.llm/.session` — it persists until the next `/log-start` overwrites it. This allows multiple `/log` calls per session.
 
 ## Arguments
 

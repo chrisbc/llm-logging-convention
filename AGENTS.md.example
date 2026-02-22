@@ -65,6 +65,23 @@ Not all fields are equally reliable. LLM agents typically don't have direct acce
 - **File path**: Always `.llm/log.jsonl` in project root
 - **Create if missing**: If `.llm/log.jsonl` doesn't exist, create it with the first entry
 
+## /log-start Command
+
+### Usage
+
+```
+/log-start [topic]
+```
+
+**Purpose**: Mark the start of a work session. Records timestamp and optional topic to `.llm/.session` for later use by `/log`.
+
+### Behavior
+
+1. Write `{"start":"<now UTC>","topic":"<topic if provided>"}` to `.llm/.session`
+2. Confirm: "Session started: *<topic>*" (or just "Session started." if no topic)
+
+**Notes**: Overwrites any existing `.llm/.session`. The file is transient and should be in `.gitignore`.
+
 ## /log Command
 
 ### Usage
@@ -79,30 +96,24 @@ Not all fields are equally reliable. LLM agents typically don't have direct acce
 
 When user invokes `/log`:
 
-1. **Ask for user notes** (if not provided in command):
-   ```
-   "Add any notes for this log entry? (press Enter to skip)"
-   ```
+1. **Check for session file**: Read `.llm/.session` if it exists:
+   - Use `start` as `session_start` (precise, user-provided)
+   - Use `topic` as a seed for writing the `summary`
+   - Calculate `duration_min` from `start` to now
 
-2. **Gather session data**:
-   - Review git commits made this session: `git log --oneline --since="session start"`
-   - Review files read, created, modified during conversation
-   - Calculate duration from first user message to now
+2. **If no notes provided**: Ask "Add any notes for this log entry? (press Enter to skip)"
+
+3. **Gather session data**:
+   - If session file exists with `start`, use `git log --oneline --since="<start>"` for accurate commit filtering
+   - Otherwise, `git log --oneline -10` and use best judgement
+   - Track files read, created, modified during conversation
    - Note token usage if available
 
-3. **Append entry** to `.llm/log.jsonl`
+4. **Append entry** to `.llm/log.jsonl`
 
-4. **Confirm**: "Logged session to .llm/log.jsonl"
+5. **Confirm**: "Logged session to .llm/log.jsonl"
 
-### Example Invocation
-
-```
-User: /log decided to use RoboClaw over RC ESC
-Agent: 
-- Gathers session data
-- Appends entry with user_notes: "decided to use RoboClaw over RC ESC"
-- Confirms log entry created
-```
+**Note**: `/log` does not delete `.llm/.session` — it persists until the next `/log-start` overwrites it. This allows multiple `/log` calls per session.
 
 ### On Session Exit
 
@@ -116,7 +127,7 @@ When a session ends naturally or user says "bye", "done", etc., the agent should
 
 The `user_notes` field captures:
 - Key decisions made
-- Blockers encountered  
+- Blockers encountered
 - Next steps identified
 - Any other context the user wants preserved
 
