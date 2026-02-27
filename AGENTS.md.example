@@ -35,15 +35,15 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `timestamp` | ISO 8601 string | Yes | When the log entry was created (UTC) |
-| `session_start` | ISO 8601 string | No | When the session began (UTC, estimated from first commit or heuristic) |
+| `session_start` | ISO 8601 string | No | When this work segment began (UTC) |
 | `project_name` | string | Yes | Human-readable project name |
 | `project_root` | string | Yes | Root folder name (for aggregation) |
 | `model` | string | Yes | Model identifier |
 | `tool` | string | Yes | Tool name (claude-code, opencode, cursor, etc.) |
-| `duration_min` | number | No | Approximate session duration in minutes |
+| `duration_min` | number | No | Duration of this work segment in minutes |
 | `tokens_in` | number | No | Input tokens used |
 | `tokens_out` | number | No | Output tokens generated |
-| `commits` | string[] | No | Git commit hashes made during session |
+| `commits` | string[] | No | Git commit hashes made during this segment |
 | `files` | object | No | File operations categorized |
 | `files.read` | string[] | No | Files read/referenced |
 | `files.created` | string[] | No | New files created |
@@ -55,8 +55,9 @@ When working on this project, **always append a log entry** to `.llm/log.jsonl` 
 
 Not all fields are equally reliable. LLM agents typically don't have direct access to their own session metadata, so some values are best-effort estimates:
 
-- **Precise**: `timestamp`, `model`, `tool`, `commits`, `files`, `summary`
-- **Estimated**: `session_start`, `duration_min`, `tokens_in`/`tokens_out`
+- **Always precise**: `timestamp` (via `date -u`), `model`, `tool`, `commits`, `files`, `summary`
+- **Precise if valid session file**: `session_start`, `duration_min`
+- **Estimated**: `tokens_in`/`tokens_out`
 
 ### Implementation Notes
 
@@ -78,10 +79,19 @@ Not all fields are equally reliable. LLM agents typically don't have direct acce
 
 ### Behavior
 
-1. Write `{"start":"<now UTC>","topic":"<topic if provided>"}` to `.llm/.session`
-2. Confirm: "Session started: *<topic>*" (or just "Session started." if no topic)
+1. **Check for existing session** — if `.llm/.session` exists:
+   - Check for unlogged commits since that `start` time
+   - If commits found, prompt: "Previous session has unlogged commits. Log it first? [y/n]"
+   - `y` → run `/log`, then continue; `n` → warn and overwrite
 
-**Notes**: Overwrites any existing `.llm/.session`. The file is transient and should be in `.gitignore`.
+2. **Write session file** using bash with live UTC timestamp:
+   ```bash
+   echo "{\"start\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",\"topic\":\"<topic>\"}" > .llm/.session
+   ```
+
+3. Confirm: "Session started: *<topic>*" (or just "Session started." if no topic)
+
+**Notes**: `.llm/.session` is transient and should be in `.gitignore`.
 
 ## /log Command
 
@@ -91,43 +101,55 @@ Not all fields are equally reliable. LLM agents typically don't have direct acce
 /log [notes]
 ```
 
-**Purpose**: Create or update the session log entry, optionally with user notes.
+**Purpose**: Log a work segment. Creates an entry in `.llm/log.jsonl` and updates `.session.start` for the next segment.
 
 ### Behavior
 
 When user invokes `/log`:
 
-1. **Check for session file**: Read `.llm/.session` if it exists:
-   - Use `start` as `session_start` (precise, user-provided)
-   - Use `topic` as a seed for writing the `summary`
-   - Calculate `duration_min` from `start` to now
+1. **Get current timestamp** using bash:
+   ```bash
+   date -u +"%Y-%m-%dT%H:%M:%SZ"
+   ```
 
-2. **If no notes provided**: Ask "Add any notes for this log entry? (press Enter to skip)"
+2. **Check for session file** (`.llm/.session`):
 
-3. **Gather session data**:
-   - If session file exists with `start`, use `git log --oneline --since="<start>"` for accurate commit filtering
-   - Otherwise, `git log --oneline -10` and use best judgement
-   - Track files read, created, modified during conversation
-   - Note token usage if available
+   **If file does NOT exist:**
+   - Ask user: "No session file found. Provide a session_start time? (YYYY-MM-DDTHH:MM:SSZ or 'skip')"
 
-4. **Append entry** to `.llm/log.jsonl`:
-   - Create `.llm/` directory if missing: `mkdir -p .llm`
-   - **Use Bash with `>>` to append** — do NOT use Write or Edit tools (they overwrite the file):
-     ```bash
-     printf '%s\n' '{"timestamp":"...","project_name":"..."}' >> .llm/log.jsonl
-     ```
+   **If file EXISTS:**
+   - Read `start` and `topic` from `.llm/.session`
 
-5. **Confirm**: "Logged session to .llm/log.jsonl"
+3. **Calculate duration** (if valid `session_start`):
+   ```bash
+   now=$(date -u +%s)
+   start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$start" +%s 2>/dev/null || date -d "$start" +%s 2>/dev/null)
+   echo $(( (now - start_epoch) / 60 ))
+   ```
 
-**Note**: `/log` does not delete `.llm/.session` — it persists until the next `/log-start` overwrites it. This allows multiple `/log` calls per session.
+4. **Threshold check** — if `duration_min > 120`:
+   - Prompt: "Session shows **X hours** duration. Adjust start time? [y/no/abort]"
+   - `y`: Ask "Enter new start (YYYY-MM-DDTHH:MM:SSZ or 'now'):"
+     - `now` → use current timestamp, `duration_min` = 0
+     - timestamp → validate and use, recalculate duration
+   - `no`: Proceed with current duration (legitimate long session)
+   - `abort`: Cancel `/log` command
 
-### On Session Exit
+5. **Find commits**: `git log --since="<session_start>"` or `--since="<last_log_timestamp>"`
 
-When a session ends naturally or user says "bye", "done", etc., the agent should:
+6. **If no notes provided**: Ask "Add any notes for this log entry? (press Enter to skip)"
 
-1. Ask: "Log this session before exiting?"
-2. If yes, run `/log` workflow
-3. Then exit
+7. **Append entry** to `.llm/log.jsonl`:
+   ```bash
+   mkdir -p .llm && printf '%s\n' '{"timestamp":"...","project_name":"..."}' >> .llm/log.jsonl
+   ```
+
+8. **Update `.session.start`** to the log entry timestamp:
+   ```bash
+   echo "{\"start\":\"$timestamp\",\"topic\":\"$topic\"}" > .llm/.session
+   ```
+
+9. **Confirm**: "Logged session to .llm/log.jsonl"
 
 ### Notes Field
 

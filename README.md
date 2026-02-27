@@ -58,16 +58,16 @@ your-project/
 | Field | Required | Description |
 |-------|----------|-------------|
 | `timestamp` | Yes | When the log entry was created (ISO 8601, UTC) |
-| `session_start` | No | When the session began (ISO 8601, UTC) |
+| `session_start` | No | When this work segment began (ISO 8601, UTC) |
 | `project_name` | Yes | Human-readable project name |
 | `project_root` | Yes | Root folder name (for aggregation across projects) |
 | `model` | Yes | Model identifier |
 | `tool` | Yes | Tool name (claude-code, opencode, cursor, etc.) |
-| `duration_min` | No | Approximate session duration in minutes |
+| `duration_min` | No | Duration of this work segment in minutes |
 | `tokens_in` | No | Input tokens |
 | `tokens_out` | No | Output tokens |
-| `commits` | No | Git commit hashes from this session |
-| `files.read` | No | Files read during session |
+| `commits` | No | Git commit hashes from this segment |
+| `files.read` | No | Files read during segment |
 | `files.created` | No | New files created |
 | `files.modified` | No | Existing files modified |
 | `summary` | Yes | Brief work description |
@@ -77,9 +77,9 @@ your-project/
 
 Not all fields are equally reliable. LLM agents typically don't have direct access to their own session metadata (start time, token counts, etc.), so some values are best-effort estimates.
 
-- **Always precise**: `timestamp` (log creation time), `model`, `tool`, `commits`, `files`, `summary`
-- **Precise if `/log-start` was used**: `session_start`, `duration_min`
-- **Estimated otherwise**: `session_start` (inferred from first commit or heuristic), `duration_min` (approximate), `tokens_in`/`tokens_out` (only if the tool exposes usage data)
+- **Always precise**: `timestamp` (via `date -u`), `model`, `tool`, `commits`, `files`, `summary`
+- **Precise if valid `/log-start` session**: `session_start`, `duration_min`
+- **Estimated otherwise**: `session_start` (user-provided or inferred), `duration_min` (approximate), `tokens_in`/`tokens_out` (only if the tool exposes usage data)
 
 Consumers of log data should treat estimated fields as indicative, not exact.
 
@@ -90,13 +90,25 @@ Consumers of log data should treat estimated fields as indicative, not exact.
 ```
 /log-start                     # Mark session start (records timestamp)
 /log-start updating ROS2 deps  # Mark start with a topic
-/log                           # Log session, prompts for notes
+/log                           # Log work segment, prompts for notes
 /log decided to use RoboClaw   # Log with notes
 ```
 
-Using `/log-start` at the beginning of a session makes `session_start` and `duration_min` precise instead of estimated.
+Each `/log` creates one log entry representing a **work segment**. The `.session.start` is updated after each log, so subsequent `/log` calls track time since the previous log.
 
-On session exit, tools should ask: "Log this session before exiting?"
+**Safety checks:**
+
+- **`/log-start`** warns if a previous session has unlogged commits, giving you a chance to log first
+- **`/log`** prompts to adjust start time if duration > 2 hours (handles pause/resume scenarios)
+
+**Paused sessions:**
+
+If you pause work and resume later, `/log` will detect the inflated duration (>2 hours) and ask:
+> "Session shows X hours duration. Adjust start time? [y/no/abort]"
+
+- `y` → Enter new start time or "now"
+- `no` → Keep duration (legitimate long session)
+- `abort` → Cancel and fix manually
 
 ### For LLM Tool Developers
 
