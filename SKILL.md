@@ -84,7 +84,7 @@ When user invokes `/log`:
    ```bash
    start="2025-02-27T09:52:52Z"  # from .llm/.session
    now=$(date -u +%s)
-   start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$start" +%s 2>/dev/null || date -d "$start" +%s 2>/dev/null)
+   start_epoch=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%SZ" "$start" +%s 2>/dev/null || TZ=UTC date -d "$start" +%s 2>/dev/null)
    echo $(( (now - start_epoch) / 60 ))
    ```
 
